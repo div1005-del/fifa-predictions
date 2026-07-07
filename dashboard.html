@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>2026 FIFA World Cup - Knockout Stage</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { text-align: center; color: white; margin-bottom: 30px; }
+        h1 { font-size: 3em; margin-bottom: 5px; }
+        .subtitle { font-size: 1.1em; opacity: 0.9; }
+        .status { text-align: center; color: white; font-size: 1.1em; margin-bottom: 20px; padding: 10px; border-radius: 5px; background: rgba(74, 222, 128, 0.2); }
+        .disclaimer { text-align: center; color: white; font-size: 0.85em; margin-bottom: 20px; padding: 10px; border-radius: 5px; background: rgba(0,0,0,0.15); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .tab-btn { background: white; color: #667eea; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .tab-btn.active { background: #667eea; color: white; }
+        .tab-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); margin-bottom: 20px; }
+        .card h2 { color: #667eea; margin-bottom: 20px; font-size: 1.4em; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .match-card { background: #f9f9f9; padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid #667eea; }
+        .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .match-teams { display: flex; align-items: center; gap: 20px; flex: 1; }
+        .team { text-align: center; }
+        .team-name { font-weight: bold; font-size: 1.1em; color: #333; }
+        .score { font-size: 2em; font-weight: bold; color: #667eea; margin: 0 15px; }
+        .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; }
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-upcoming { background: #fff3cd; color: #856404; }
+        .result-form { background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .form-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        input, select, button { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; }
+        input, select { background: white; }
+        button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        .btn-small { padding: 8px 15px; font-size: 0.9em; width: 100%; }
+        .btn-delete { padding: 8px 15px; font-size: 0.9em; width: auto; background: #dc3545; margin-left: 10px; }
+        .btn-delete:hover { background: #c82333; }
+        .prediction-card { background: #f0f4ff; padding: 15px; border-radius: 10px; margin-top: 15px; border: 2px solid #667eea; font-size: 0.9em; line-height: 1.6; }
+        .accuracy-box { background: #f9f9f9; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .accuracy-number { font-size: 3em; font-weight: bold; color: #667eea; }
+        .accuracy-label { color: #666; margin-top: 10px; }
+        .stage-label { font-size: 0.85em; color: #999; font-weight: bold; margin-bottom: 10px; }
+        .loading { color: #667eea; padding: 20px; text-align: center; }
+        .error { background: #fee; color: #c33; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .winner-badge { background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; display: inline-block; margin: 10px 0; }
+        .unverified { color: #b8860b; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚽ 2026 FIFA WORLD CUP</h1>
+            <p class="subtitle">Knockout Stage - Winner Prediction System</p>
+        </header>
+
+        <div class="status" id="status">🟢 API Online - Real Data Only Mode</div>
+        <div class="disclaimer">Scoped to the 10 teams remaining in the tournament. Uses real FIFA rankings, real manager records, and real match history. No fabricated stats.</div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'schedule')">📅 Schedule</button>
+            <button class="tab-btn" onclick="switchTab(event, 'predict')">🎯 Quick Predict</button>
+            <button class="tab-btn" onclick="switchTab(event, 'results')">✅ Add Results</button>
+            <button class="tab-btn" onclick="switchTab(event, 'accuracy')">📊 Accuracy</button>
+        </div>
+
+        <div id="schedule" class="tab-content active">
+            <div class="card">
+                <h2>📅 Tournament Schedule - Knockout Stage</h2>
+                <div id="schedule-list"></div>
+            </div>
+        </div>
+
+        <div id="predict" class="tab-content">
+            <div class="card">
+                <h2>🎯 Quick Prediction</h2>
+                <div class="form-row">
+                    <input type="text" id="homeTeam" placeholder="Home team" list="teams-list">
+                    <input type="text" id="awayTeam" placeholder="Away team" list="teams-list">
+                    <select id="venue">
+                        <option value="home">🏠 Home</option>
+                        <option value="neutral" selected>⚪ Neutral</option>
+                        <option value="away">🚌 Away</option>
+                    </select>
+                    <button onclick="predictMatch();">⚡ Predict</button>
+                </div>
+                <div id="prediction"></div>
+            </div>
+        </div>
+
+        <div id="results" class="tab-content">
+            <div class="card">
+                <h2>✅ Enter Match Result</h2>
+                <div class="result-form">
+                    <div class="form-row">
+                        <input type="text" id="resultHome" placeholder="Home team">
+                        <input type="number" id="resultHomeScore" placeholder="Score" min="0" max="20">
+                        <input type="number" id="resultAwayScore" placeholder="Score" min="0" max="20">
+                        <input type="text" id="resultAway" placeholder="Away team">
+                    </div>
+                    <button onclick="submitResult()" style="width: 100%; grid-column: span 4;">💾 Save Result</button>
+                </div>
+                <div id="result-message"></div>
+            </div>
+        </div>
+
+        <div id="accuracy" class="tab-content">
+            <div class="card">
+                <h2>📊 Prediction Accuracy</h2>
+                <div id="accuracy-stats"></div>
+                <h2 style="margin-top: 30px;">📈 Results Log</h2>
+                <div id="results-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="teams-list">
+        <option value="Argentina"><option value="Egypt"><option value="Switzerland">
+        <option value="Colombia"><option value="France"><option value="Morocco">
+        <option value="Spain"><option value="Belgium"><option value="Norway"><option value="England">
+    </datalist>
+
+    <script>
+        const API_URL = "";  // same origin - works locally AND once deployed
+
+        function switchTab(event, tab) {
+            event.preventDefault();
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+            if (tab === 'schedule') loadSchedule();
+            if (tab === 'accuracy') loadAccuracy();
+        }
+
+        async function loadSchedule() {
+            try {
+                const response = await fetch(API_URL + "/schedule");
+                const data = await response.json();
+                let html = '';
+                for (let fixture of data.fixtures) {
+                    const completed = fixture.status === 'completed';
+                    const result = fixture.result;
+                    html += '<div class="match-card">';
+                    html += '<div class="stage-label">' + fixture.stage + ' • ' + new Date(fixture.date).toLocaleDateString() + ' @ ' + fixture.time + '</div>';
+                    html += '<div class="match-header">';
+                    html += '<div class="match-teams">';
+                    html += '<div class="team"><div class="team-name">' + fixture.home + '</div></div>';
+                    if (completed && result) {
+                        html += '<div class="score">' + result.home_score + ' - ' + result.away_score + '</div>';
+                    } else if (completed) {
+                        html += '<div class="score">-</div>';
+                    } else {
+                        html += '<div class="score">VS</div>';
+                    }
+                    html += '<div class="team"><div class="team-name">' + fixture.away + '</div></div>';
+                    html += '</div>';
+                    html += '<div class="status-badge ' + (completed ? 'status-completed' : 'status-upcoming') + '">' + (completed ? '✅ Done' : '⏰ Upcoming') + '</div>';
+                    html += '</div>';
+                    if (!completed && fixture.home !== 'TBD' && fixture.away !== 'TBD') {
+                        html += '<button class="btn-small" onclick="getPredictionForMatch(\'' + encodeURIComponent(fixture.home) + '\', \'' + encodeURIComponent(fixture.away) + '\', this)">🔮 Check Probability</button>';
+                    }
+                    html += '</div>';
+                }
+                document.getElementById('schedule-list').innerHTML = html;
+            } catch (e) {
+                document.getElementById('schedule-list').innerHTML = '<div class="error">Error loading schedule</div>';
+            }
+        }
+
+        function formatManager(mgr, teamLabel) {
+            let line = teamLabel + ' manager: ' + mgr.name;
+            if (mgr.appointed) line += ' (since ' + mgr.appointed + ')';
+            if (mgr.trophies && mgr.trophies.length > 0) line += ' — ' + mgr.trophies.join(', ');
+            if (mgr.data_verified === false) line += ' <span class="unverified">(record unverified - neutral weighting used)</span>';
+            else if (mgr.data_verified === 'partial') line += ' <span class="unverified">(partial record)</span>';
+            return line;
+        }
+
+        async function getPredictionForMatch(homeEncoded, awayEncoded, buttonElement) {
+            const home = decodeURIComponent(homeEncoded);
+            const away = decodeURIComponent(awayEncoded);
+            try {
+                const response = await fetch(API_URL + "/predict/" + home + "/" + away + "?venue=neutral");
+                const data = await response.json();
+                if (data.error) { alert('Error: ' + data.error); return; }
+                const homeWin = data.probabilities.home_win || 0;
+                const awayWin = data.probabilities.away_win || 0;
+                const winner = data.winner || home;
+                let html = '<div class="prediction-card">';
+                html += '<strong>⚽ ' + home + ' vs ' + away + '</strong><br>';
+                html += '<div class="winner-badge">🏆 Winner: ' + winner + '</div><br>';
+                html += '📊 ' + home + ': ' + homeWin.toFixed(1) + '% | ' + away + ': ' + awayWin.toFixed(1) + '%<br>';
+                html += 'FIFA Rank: ' + home + ' #' + data.home_fifa_rank + ' vs ' + away + ' #' + data.away_fifa_rank + '<br>';
+                html += formatManager(data.home_manager, home) + '<br>';
+                html += formatManager(data.away_manager, away);
+                html += '</div>';
+                buttonElement.insertAdjacentHTML('afterend', html);
+                buttonElement.style.display = 'none';
+            } catch (e) {
+                alert('Failed to get prediction: ' + e.message);
+            }
+        }
+
+        async function predictMatch() {
+            const home = document.getElementById('homeTeam').value.trim();
+            const away = document.getElementById('awayTeam').value.trim();
+            const venue = document.getElementById('venue').value;
+            if (!home || !away) { alert('Enter both teams'); return; }
+            try {
+                const response = await fetch(API_URL + "/predict/" + home + "/" + away + "?venue=" + venue);
+                const data = await response.json();
+                if (data.error) {
+                    document.getElementById('prediction').innerHTML = '<div class="error">❌ ' + data.error + '</div>';
+                    return;
+                }
+                const homeWin = data.probabilities.home_win || 0;
+                const awayWin = data.probabilities.away_win || 0;
+                const winner = data.winner || home;
+                const venueLabel = venue === 'home' ? '🏠 Home' : venue === 'away' ? '🚌 Away' : '⚪ Neutral';
+                let html = '<div class="prediction-card">';
+                html += '<strong>⚽ ' + home + ' vs ' + away + ' (' + venueLabel + ')</strong><br>';
+                html += '<div class="winner-badge">🏆 WINNER: ' + winner + '</div><br>';
+                html += '📊 Win Probability: ' + home + ' ' + homeWin.toFixed(1) + '% | ' + away + ' ' + awayWin.toFixed(1) + '%<br>';
+                html += 'FIFA Rank: ' + home + ' #' + data.home_fifa_rank + ' vs ' + away + ' #' + data.away_fifa_rank + '<br><br>';
+                html += formatManager(data.home_manager, home) + '<br>';
+                html += formatManager(data.away_manager, away);
+                html += '</div>';
+                document.getElementById('prediction').innerHTML = html;
+            } catch (e) {
+                document.getElementById('prediction').innerHTML = '<div class="error">❌ Error: ' + e.message + '</div>';
+            }
+        }
+
+        async function submitResult() {
+            const home = document.getElementById('resultHome').value.trim();
+            const homeScore = parseInt(document.getElementById('resultHomeScore').value);
+            const awayScore = parseInt(document.getElementById('resultAwayScore').value);
+            const away = document.getElementById('resultAway').value.trim();
+            if (!home || !away || isNaN(homeScore) || isNaN(awayScore)) { alert('Fill all fields with valid scores'); return; }
+            try {
+                const response = await fetch(API_URL + "/result?home=" + home + "&away=" + away + "&home_score=" + homeScore + "&away_score=" + awayScore, {method: 'POST'});
+                const data = await response.json();
+                if (data.error) {
+                    document.getElementById('result-message').innerHTML = '<div class="error">❌ ' + data.error + '</div>';
+                } else {
+                    document.getElementById('result-message').innerHTML = '<div class="success">✅ Result saved: ' + home + ' ' + homeScore + '-' + awayScore + ' ' + away + '</div>';
+                    document.getElementById('resultHome').value = '';
+                    document.getElementById('resultHomeScore').value = '';
+                    document.getElementById('resultAwayScore').value = '';
+                    document.getElementById('resultAway').value = '';
+                    setTimeout(function() { loadSchedule(); }, 1500);
+                }
+            } catch (e) {
+                document.getElementById('result-message').innerHTML = '<div class="error">❌ Error: ' + e.message + '</div>';
+            }
+        }
+
+        async function deleteResult(home, away) {
+            if (!confirm('Delete result: ' + home + ' vs ' + away + '?')) return;
+            try {
+                const response = await fetch(API_URL + "/result?home=" + home + "&away=" + away, {method: 'DELETE'});
+                const data = await response.json();
+                if (data.error) { alert('Error: ' + data.error); } else { loadAccuracy(); }
+            } catch (e) {
+                alert('Failed to delete: ' + e.message);
+            }
+        }
+
+        async function loadAccuracy() {
+            try {
+                const accResp = await fetch(API_URL + "/accuracy");
+                const acc = await accResp.json();
+                const resultsResp = await fetch(API_URL + "/results");
+                const res = await resultsResp.json();
+                let html = '<div class="accuracy-box">';
+                html += '<div class="accuracy-number">' + acc.accuracy + '%</div>';
+                html += '<div class="accuracy-label">Accuracy (' + acc.correct + '/' + acc.total + ' correct)</div>';
+                html += '</div>';
+                document.getElementById('accuracy-stats').innerHTML = html;
+                let logHtml = '';
+                for (let r of res.results) {
+                    logHtml += '<div class="match-card" style="display: flex; justify-content: space-between; align-items: center;">';
+                    logHtml += '<strong>⚽ ' + r.home + ' ' + r.home_score + '-' + r.away_score + ' ' + r.away + '</strong>';
+                    logHtml += '<button class="btn-delete" onclick="deleteResult(\'' + r.home + '\', \'' + r.away + '\')">🗑️ Delete</button>';
+                    logHtml += '</div>';
+                }
+                document.getElementById('results-log').innerHTML = logHtml || '<div class="loading">No results yet</div>';
+            } catch (e) {
+                console.log('Error:', e);
+            }
+        }
+
+        window.onload = loadSchedule;
+    </script>
+</body>
+</html>
