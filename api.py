@@ -245,16 +245,23 @@ team_stats = {}
 for team in TEAMS_2026:
     team_stats[team] = get_team_stats(df, team)
 
+# Precompute stats for EVERY team that appears in the historical data,
+# just once each - not per row. This is what was slowing/hanging the
+# server down on deploy (it was recalculating from scratch ~12,000+
+# times instead of ~200 times).
+all_teams_in_data = set(df['home_team'].unique()) | set(df['away_team'].unique())
+all_team_stats = dict(team_stats)  # start with the 10 scoped teams already computed
+for team in all_teams_in_data:
+    if team not in all_team_stats:
+        all_team_stats[team] = get_team_stats(df, team)
+
 X = []
 y = []
 for idx, row in df.iterrows():
     home = row['home_team']
     away = row['away_team']
-    h = get_team_stats(df, home) if home in team_stats or True else None
-    # Use full historical dataset for training (not just the 10 remaining teams)
-    # so the model still learns from all 6,000+ real matches
-    h_stats = team_stats.get(home) or get_team_stats(df, home)
-    a_stats = team_stats.get(away) or get_team_stats(df, away)
+    h_stats = all_team_stats[home]
+    a_stats = all_team_stats[away]
     X.append([h_stats['goals_for'], h_stats['goals_against'], h_stats['win_rate'], h_stats['recent_form'],
               a_stats['goals_for'], a_stats['goals_against'], a_stats['win_rate'], a_stats['recent_form']])
     if row['home_win']:
@@ -340,8 +347,8 @@ def add_injury(team: str, player: str, impact: float = 0.05, status: str = "out"
     return {"status": "saved", "injury": {"team": team, "player": player, "impact": impact, "status": status}}
 
 def build_features(home, away, venue="neutral"):
-    h = team_stats.get(home) or get_team_stats(df, home)
-    a = team_stats.get(away) or get_team_stats(df, away)
+    h = all_team_stats.get(home) or get_team_stats(df, home)
+    a = all_team_stats.get(away) or get_team_stats(df, away)
     h_ranking = 1.0
     a_ranking = 1.0
     if home in FIFA_RANKINGS and away in FIFA_RANKINGS:
